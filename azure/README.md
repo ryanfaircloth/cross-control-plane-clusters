@@ -1,0 +1,11 @@
+
+# Important
+
+```bash
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-azure-containerservice
+spec:
+  package: xpkg.upbound.io/upbound/provider-azure-containerservice:v0.36.0
+```

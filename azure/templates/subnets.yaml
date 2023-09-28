@@ -1,0 +1,27 @@
+{{- range .Values.network.subnets }}
+apiVersion: network.azure.upbound.io/v1beta1
+kind: Subnet
+metadata:
+  name: {{ include "azure.fullname" $ }}-{{ .name }}
+  annotations:
+    crossplane.io/external-name: {{ .name }}
+  labels:
+    {{- include "azure.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: azure-subnet-{{ .name }}
+spec:
+  forProvider:
+    resourceGroupName: {{ $.Values.resourceGroupName }}
+    virtualNetworkNameRef:
+      name: {{ include "azure.fullname" $ }}
+    addressPrefixes:
+    {{- toYaml .addressPrefixes | nindent 6 }}
+    {{- with .serviceEndpoints }}
+    serviceEndpoints:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}        
+    {{- with $.Values.tags }}
+    tags:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}               
+---      
+{{- end }}      

@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+apiVersion: network.azure.upbound.io/v1beta1
+kind: VirtualNetwork
+metadata:
+  name: {{ include "azure.fullname" . }}
+  labels:
+    {{- include "azure.labels" . | nindent 4 }}
+spec:
+  forProvider:
+    addressSpace:
+    {{- toYaml .Values.network.addressSpace | nindent 6 }}
+    location: {{ .Values.location }}
+    resourceGroupName: {{ .Values.resourceGroupName }}
+    {{- with $.Values.tags }}
+    tags:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}                

@@ -1,0 +1,62 @@
+apiVersion: containerservice.azure.upbound.io/v1beta1
+kind: KubernetesCluster
+metadata:
+  name: {{ include "azure.fullname" . }}
+  labels:
+    {{- include "azure.labels" $ | nindent 4 }}
+spec:
+  forProvider:
+    automaticChannelUpgrade: patch
+    defaultNodePool:
+      - name: system
+        temporaryNameForRotation: tsystem
+        enableAutoScaling: true        
+        maxCount: {{ .Values.kubernetes.defaultNodePool.maxCount | default 3 }}
+        minCount: {{ .Values.kubernetes.defaultNodePool.minCount | default 1 }}
+        onlyCriticalAddonsEnabled: {{ .Values.kubernetes.defaultNodePool.onlyCriticalAddonsEnabled | default true }}
+        # kubeletDiskType: Temporary
+        osDiskType: {{ .Values.kubernetes.defaultNodePool.osDiskType }}
+        osDiskSizeGb: {{ .Values.kubernetes.defaultNodePool.osDiskSizeGb }}
+        vmSize: {{ .Values.kubernetes.defaultNodePool.vmSize }}
+        vnetSubnetIdSelector:
+          matchLabels: 
+            {{- include "azure.selectorLabels" $ | nindent 12 }}
+            app.kubernetes.io/component: azure-subnet-k8s
+        zones: ["1","2","3"]
+        {{- if .Values.kubernetes.defaultNodePool.nodeLabels }}
+        nodeLabels:
+          {{- toYaml .Values.kubernetes.defaultNodePool.nodeLabels | nindent 10 }}
+        {{- end }}
+        {{- with .Values.kubernetes.defaultNodePool.nodeTaints }}
+        nodeTaints:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}        
+        {{- with $.Values.tags }}
+        tags:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}           
+    dnsPrefix: {{ include "azure.fullname" . }}
+    identity:
+      - type: SystemAssigned
+    location: {{ .Values.location }}
+    localAccountDisabled: true
+    azureActiveDirectoryRoleBasedAccessControl:
+      - azureRbacEnabled: true
+        managed: true
+        # adminGroupObjectIds: []
+        tenantId: {{ .Values.azuread.tenantId }}
+    azurePolicyEnabled: true
+      
+    networkProfile:    
+      - dnsServiceIp: {{ .Values.kubernetes.networkProfile.dnsServiceIp }}
+        networkPlugin: azure
+        serviceCidr: {{ .Values.kubernetes.networkProfile.serviceCidr }}
+    resourceGroupName: {{ $.Values.resourceGroupName }}
+    {{- with $.Values.tags }}
+    tags:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}            
+    skuTier: {{ .Values.kubernetes.skuTier }}
+  writeConnectionSecretToRef:
+    namespace: {{ .Release.Namespace }}
+    name: {{ include "azure.fullname" . }}
