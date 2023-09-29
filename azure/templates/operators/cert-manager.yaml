@@ -1,0 +1,92 @@
+apiVersion: helm.crossplane.io/v1beta1
+kind: Release
+metadata:
+  name: {{ include "azure.fullname" . }}-cert-manager
+  annotations:
+    crossplane.io/external-name: cert-manager
+  labels:
+    {{- include "azure.labels" $ | nindent 4 }}
+spec:
+  forProvider:
+    chart:
+      name: argocd-apps
+      repository: https://argoproj.github.io/argo-helm
+    namespace: argocd
+    # set:
+    #   - name: param1
+    #     value: value2
+    values:
+      applications: 
+        - name: cert-manager
+          namespace: argocd
+          destination:
+            namespace: cert-manager
+            server: https://kubernetes.default.svc
+          project: operators
+          source:
+            chart: cert-manager
+            repoURL: https://charts.jetstack.io
+            helm:
+              releaseName: cert-manager
+              values: |
+                installCRDs: true
+                resources:
+                  requests:
+                    memory: "48Mi"
+                    cpu: "10m"
+                cainjector:
+                  resources:
+                    requests:
+                      memory: "48Mi"
+                      cpu: "20m"
+                  replicaCount: 2
+
+                webhook:
+                  resources:
+                    requests:
+                      memory: "24Mi"
+                      cpu: "50m"
+                  replicaCount: 2
+                  securePort: 8443
+                topologySpreadConstraints:
+                - maxSkew: 1
+                  topologyKey: topology.kubernetes.io/zone
+                  whenUnsatisfiable: DoNotSchedule
+                tolerations:
+                - key: "CriticalAddonsOnly"
+                  operator: "Equal"
+                  value: "true"
+                  effect: "NoSchedule"
+                affinity:
+                  nodeAffinity:
+                    requiredDuringSchedulingIgnoredDuringExecution:
+                      nodeSelectorTerms:
+                      - matchExpressions:
+                        - key: kubernetes.io/os
+                          operator: In
+                          values:
+                          - linux
+                        - key: infra/computeClass
+                          operator: In
+                          values:
+                          - system              
+            targetRevision: 1.*
+          syncPolicy:
+            automated: # automated sync by default retries failed attempts 5 times with following delays between attempts ( 5s, 10s, 20s, 40s, 80s ); retry controlled using `retry` field.
+              prune: true # Specifies if resources should be pruned during auto-syncing ( false by default ).
+              selfHeal: true # Specifies if partial app sync should be executed when resources are changed only in target Kubernetes cluster and no git change detected ( false by default ).
+              allowEmpty: false
+            syncOptions:
+            - CreateNamespace=true
+            - PruneLast=true # Allow the ability for resource pruning to happen as a final, implicit wave of a sync operation
+            - RespectIgnoreDifferences=true # When syncing changes, respect fields ignored by the ignoreDifferences configuration   
+            - ServerSideApply=true
+          ignoreDifferences:
+          - group: admissionregistration.k8s.io
+            kind: ValidatingWebhookConfiguration
+            name: cert-manager-webhook
+            jqPathExpressions:
+              - .webhooks[].namespaceSelector.matchExpressions[] | select(.key == "kubernetes.azure.com/managedby")
+              - .webhooks[].namespaceSelector.matchExpressions[] | select(.key == "control-plane")
+  providerConfigRef:
+    name: {{ include "azure.fullname" . }}-helm

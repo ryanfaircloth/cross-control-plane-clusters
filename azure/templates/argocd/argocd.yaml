@@ -1,0 +1,47 @@
+apiVersion: helm.crossplane.io/v1beta1
+kind: Release
+metadata:
+  name: {{ include "azure.fullname" . }}-argocd
+  annotations:
+    crossplane.io/external-name: argocd
+  labels:
+    {{- include "azure.labels" $ | nindent 4 }}
+spec:
+  forProvider:
+    chart:
+      name: argo-cd
+      repository: https://argoproj.github.io/argo-helm
+    namespace: argocd
+    # set:
+    #   - name: param1
+    #     value: value2
+    values:
+      global:
+        logging:
+          format: json
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - key: kubernetes.io/os
+                  operator: In
+                  values:
+                  - linux
+      controller:
+        tolerations:
+          - key: "CriticalAddonsOnly"
+            operator: "Equal"
+            value: "true"
+            effect: "NoSchedule"
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: infra/computeClass
+                  operator: In
+                  values:
+                  - system
+     
+  providerConfigRef:
+    name: {{ include "azure.fullname" . }}-helm

@@ -1,0 +1,67 @@
+apiVersion: helm.crossplane.io/v1beta1
+kind: Release
+metadata:
+  name: {{ include "azure.fullname" . }}-humio-operator
+  annotations:
+    crossplane.io/external-name: humio-operator
+  labels:
+    {{- include "azure.labels" $ | nindent 4 }}
+spec:
+  forProvider:
+    chart:
+      name: argocd-apps
+      repository: https://argoproj.github.io/argo-helm
+    namespace: argocd
+    # set:
+    #   - name: param1
+    #     value: value2
+    values:
+      applications: 
+        - name: humio-operator
+          namespace: argocd
+          destination:
+            namespace: humio-operator
+            server: https://kubernetes.default.svc
+          project: operators
+          source:
+            chart: humio-operator
+            repoURL: https://humio.github.io/humio-operator
+            helm:
+              releaseName: humio-operator
+              values: |
+                operator:
+                  tolerations:
+                    - key: "CriticalAddonsOnly"
+                      operator: "Equal"
+                      value: "true"
+                      effect: "NoSchedule"
+                  affinity:
+                    nodeAffinity:
+                      requiredDuringSchedulingIgnoredDuringExecution:
+                        nodeSelectorTerms:
+                        - matchExpressions:
+                          - key: kubernetes.io/arch
+                            operator: In
+                            values:
+                            - amd64
+                          - key: kubernetes.io/os
+                            operator: In
+                            values:
+                            - linux
+                          - key: infra/computeClass
+                            operator: In
+                            values:
+                            - system              
+            targetRevision: 0.*
+          syncPolicy:
+            automated: # automated sync by default retries failed attempts 5 times with following delays between attempts ( 5s, 10s, 20s, 40s, 80s ); retry controlled using `retry` field.
+              prune: true # Specifies if resources should be pruned during auto-syncing ( false by default ).
+              selfHeal: true # Specifies if partial app sync should be executed when resources are changed only in target Kubernetes cluster and no git change detected ( false by default ).
+              allowEmpty: false
+            syncOptions:
+            - CreateNamespace=true
+            - PruneLast=true # Allow the ability for resource pruning to happen as a final, implicit wave of a sync operation
+            - RespectIgnoreDifferences=true # When syncing changes, respect fields ignored by the ignoreDifferences configuration   
+            - ServerSideApply=true
+  providerConfigRef:
+    name: {{ include "azure.fullname" . }}-helm

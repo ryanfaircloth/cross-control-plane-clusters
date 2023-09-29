@@ -19,9 +19,5 @@ spec:
     serviceEndpoints:
       {{- toYaml . | nindent 6 }}
     {{- end }}        
-    {{- with $.Values.tags }}
-    tags:
-      {{- toYaml . | nindent 6 }}
-    {{- end }}               
 ---      
 {{- end }}      

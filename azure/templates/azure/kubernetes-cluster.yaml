@@ -15,8 +15,8 @@ spec:
         minCount: {{ .Values.kubernetes.defaultNodePool.minCount | default 1 }}
         onlyCriticalAddonsEnabled: {{ .Values.kubernetes.defaultNodePool.onlyCriticalAddonsEnabled | default true }}
         # kubeletDiskType: Temporary
-        osDiskType: {{ .Values.kubernetes.defaultNodePool.osDiskType }}
-        osDiskSizeGb: {{ .Values.kubernetes.defaultNodePool.osDiskSizeGb }}
+        osDiskType: {{ .Values.kubernetes.defaultNodePool.osDiskType | default "Managed" }}
+        osDiskSizeGb: {{ .Values.kubernetes.defaultNodePool.osDiskSizeGb | default 30 }}
         vmSize: {{ .Values.kubernetes.defaultNodePool.vmSize }}
         vnetSubnetIdSelector:
           matchLabels: 
@@ -39,7 +39,7 @@ spec:
     identity:
       - type: SystemAssigned
     location: {{ .Values.location }}
-    localAccountDisabled: true
+    localAccountDisabled: false
     azureActiveDirectoryRoleBasedAccessControl:
       - azureRbacEnabled: true
         managed: true

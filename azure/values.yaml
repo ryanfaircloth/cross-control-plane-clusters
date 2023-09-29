@@ -32,9 +32,9 @@ kubernetes:
     onlyCriticalAddonsEnabled: true
     osDiskType: Ephemeral
     osDiskSizeGb: 70
-    vmSize: Standard_D2plds_v5
+    vmSize: Standard_D2ads_v5
     nodeLabels:
-      infra/computeClass: compute
+      infra/computeClass: system
   networkProfile:
     dnsServiceIp: 10.0.4.10
     serviceCidr: 10.0.4.0/24
@@ -45,7 +45,7 @@ kubernetes:
       maxCount: 3
       osDiskType: Ephemeral
       osDiskSizeGb: 70
-      vmSize: Standard_D2plds_v5
+      vmSize: Standard_D2ads_v5
       nodeLabels:
         infra/computeClass: compute
       # nodeTaints:
@@ -54,7 +54,7 @@ kubernetes:
       maxCount: 3
       osDiskType: Ephemeral
       osDiskSizeGb: 70
-      vmSize: Standard_D2plds_v5
+      vmSize: Standard_L8s_v3
       nodeLabels:
         infra/computeClass: compute
         infra/storageClass: localnvme
